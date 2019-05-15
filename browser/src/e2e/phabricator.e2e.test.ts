@@ -27,7 +27,6 @@ async function repositoryCloned({ page }: PageOptions): Promise<void> {
     try {
         await getTokenWithSelector(page, 'Fully Imported', 'td.phui-status-item-target')
     } catch (err) {
-        console.error(err)
         await new Promise<void>(resolve => setTimeout(resolve, 1000))
         await repositoryCloned({ page })
     }
@@ -51,11 +50,11 @@ async function addPhabricatorRepo({ page }: PageOptions): Promise<void> {
     await saveRepo.click()
     // Activate the repo and wait for it to clone
     await page.goto(PHABRICATOR_BASE_URL + '/source/mux/manage/')
-    // await page.waitForSelector('a[href="/source/mux/edit/activate/"]')
-    // await page.click('a[href="/source/mux/edit/activate/"]')
-    // await page.waitForSelector('form[action="/source/mux/edit/activate/"]')
-    // const activateRepo = await getTokenWithSelector(page, 'Activate Repository', 'button')
-    // await activateRepo.click()
+    await page.waitForSelector('a[href="/source/mux/edit/activate/"]')
+    await page.click('a[href="/source/mux/edit/activate/"]')
+    await page.waitForSelector('form[action="/source/mux/edit/activate/"]')
+    const activateRepo = await getTokenWithSelector(page, 'Activate Repository', 'button')
+    await activateRepo.click()
     await repositoryCloned({ page })
     // Configure the repository mappings
     await page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.callsignMappings/')
@@ -106,13 +105,34 @@ describe('Sourcegraph Phabricator extension', () => {
         browser = await launchBrowser(['--window-size=1600,1200'])
         page = await browser.newPage()
         await init({ page, baseURL, gitHubToken })
-    }, 360 * 1000)
+    }, 4 * 60 * 1000)
 
     beforeEach(async () => {
         page = await browser.newPage()
     })
 
-    it('works', async () => {
-        await Promise.resolve()
+    it('Adds "View on Sourcegraph buttons to files" and code intelligence hovers', async () => {
+        await page.goto(PHABRICATOR_BASE_URL + '/source/mux/browse/master/context.go')
+        await page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
+        // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
+        const codeLine = await getTokenWithSelector(
+            page,
+            '​func contextGet(r *http.Request, key interface{}) interface{} {',
+            'td'
+        )
+        await codeLine.click()
+        // Once the line is tokenized, we can click on the individual token we want a hover for.
+        const codeElement = await getTokenWithSelector(page, 'contextGet', 'td.annotated span')
+        await codeElement.click()
+        await page.waitForSelector('.e2e-tooltip-go-to-definition')
+    })
+
+    afterAll(async () => {
+        if (browser) {
+            if (page && !page.isClosed()) {
+                await page.close()
+            }
+        }
+        await browser.close()
     })
 })

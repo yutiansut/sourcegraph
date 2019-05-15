@@ -1,6 +1,6 @@
 import * as os from 'os'
 import pRetry from 'p-retry'
-import puppeteer, { LaunchOptions } from 'puppeteer'
+import puppeteer from 'puppeteer'
 import { OperationOptions } from 'retry'
 import { Key } from 'ts-key-enum'
 
@@ -186,7 +186,7 @@ export async function ensureHasExternalService({
         method: 'keyboard',
     })
     await page.click('.e2e-add-external-service-button')
-    await page.waitForNavigation()
+    await page.waitForSelector(`[data-e2e-external-service-name="${displayName}"]`)
 
     if (ensureRepos) {
         // Wait for repositories to sync.
@@ -247,7 +247,7 @@ export async function getTokenWithSelector(
     let element: puppeteer.ElementHandle<HTMLElement> | undefined
     for (const elem of elements) {
         const text = await page.evaluate(element => element.textContent, elem)
-        if (text === token) {
+        if (text.trim() === token) {
             element = elem
             break
         }
