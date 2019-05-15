@@ -67,3 +67,10 @@ pushd web
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 popd
+
+echo "--- Phabricator"
+source ./dev/phabricator/start.sh
+source ./dev/phabricator/install-sourcegraph.sh
+pushd browser
+yarn run test-phabricator-e2e
+popd
