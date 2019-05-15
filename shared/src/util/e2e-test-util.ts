@@ -56,6 +56,10 @@ export function readEnvString({ variable, defaultValue }: { variable: string; de
     return value
 }
 
+export interface PageOptions {
+    page: puppeteer.Page
+}
+
 interface ReplaceTextOptions extends PageOptions {
     selector: string
     newText: string
@@ -98,10 +102,6 @@ export async function replaceText({
     await selectAllByMethod[method]()
     await page.keyboard.press(Key.Backspace)
     await page.keyboard.type(newText)
-}
-
-export interface PageOptions {
-    page: puppeteer.Page
 }
 
 export interface BaseURLOptions {
