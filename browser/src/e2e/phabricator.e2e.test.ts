@@ -117,7 +117,7 @@ describe('Sourcegraph Phabricator extension', () => {
         // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
         const codeLine = await getTokenWithSelector(
             page,
-            '​func contextGet(r *http.Request, key interface{}) interface{} {',
+            'func contextGet(r *http.Request, key interface{}) interface{} {',
             'td'
         )
         await codeLine.click()
