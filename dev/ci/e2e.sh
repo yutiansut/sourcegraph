@@ -78,5 +78,5 @@ docker exec "$PHABRICATOR_CONTAINER" bash -c "apt-get update && apt-get install 
 socat tcp-listen:80,reuseaddr,fork system:"docker exec -i $PHABRICATOR_CONTAINER socat stdio 'tcp:localhost:80'" &
 SOURCEGRAPH_URL="http://127.0.0.1:7080" source ./dev/phabricator/install-sourcegraph.sh
 pushd browser
-yarn run test-phabricator-e2e
+SOURCEGRAPH_BASE_URL="$URL" yarn run test-phabricator-e2e
 popd
