@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer'
 import {
     BaseURLOptions,
+    ensureHasCORSOrigin,
     ensureHasExternalService,
     ensureLoggedIn,
     getTokenWithSelector,
@@ -78,6 +79,7 @@ async function init({
     gitHubToken,
 }: PageOptions & BaseURLOptions & { gitHubToken: string }): Promise<void> {
     await ensureLoggedIn({ page, baseURL })
+    await ensureHasCORSOrigin({ baseURL, page, corsOriginURL: 'http://127.0.0.1' })
     await ensureHasExternalService({
         page,
         baseURL,

@@ -3,6 +3,10 @@ import pRetry from 'p-retry'
 import puppeteer from 'puppeteer'
 import { OperationOptions } from 'retry'
 import { Key } from 'ts-key-enum'
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
+import * as GQL from '../graphql/schema'
 
 /**
  * Retry function with more sensible defaults for e2e test assertions
@@ -147,6 +151,92 @@ export interface EnsureHasExternalServiceOptions extends PageOptions, BaseURLOpt
     displayName: string
     config: string
     ensureRepos?: string[]
+}
+
+async function makeRequest<T = void>({
+    page,
+    url,
+    init,
+}: PageOptions & { url: string; init: RequestInit }): Promise<T> {
+    const handle = await page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init as {})
+    return handle.jsonValue()
+}
+
+async function makeGraphQLRequest<T extends GQL.IQuery | GQL.IMutation>({
+    baseURL,
+    page,
+    request,
+    variables,
+}: PageOptions & BaseURLOptions & { request: string; variables: {} }): Promise<GraphQLResult<T>> {
+    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+    const xhrHeaders = await page.evaluate(() => (window as any).context.xhrHeaders)
+    const response = await makeRequest<GraphQLResult<T>>({
+        page,
+        url: `${baseURL}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+        init: {
+            method: 'POST',
+            body: JSON.stringify({ query: request, variables }),
+            headers: {
+                ...xhrHeaders,
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+        },
+    })
+    return response
+}
+
+export async function ensureHasCORSOrigin({
+    baseURL,
+    page,
+    corsOriginURL,
+}: BaseURLOptions & PageOptions & { corsOriginURL: string }): Promise<void> {
+    const currentConfigResponse = await makeGraphQLRequest<GQL.IQuery>({
+        baseURL,
+        page,
+        request: gql`
+            query Site {
+                site {
+                    id
+                    configuration {
+                        id
+                        effectiveContents
+                        validationMessages
+                    }
+                }
+            }
+        `,
+        variables: {},
+    })
+    const { site } = dataOrThrowErrors(currentConfigResponse)
+    const currentConfig = site.configuration.effectiveContents
+    const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
+        const urls = oldCorsOrigin.value.split(' ')
+        return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
+    })
+    const updateConfigResponse = await makeGraphQLRequest<GQL.IMutation>({
+        baseURL,
+        page,
+        request: gql`
+            mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                updateSiteConfiguration(lastID: $lastID, input: $input)
+            }
+        `,
+        variables: { lastID: site.configuration.id, input: newConfig },
+    })
+    dataOrThrowErrors(updateConfigResponse)
+}
+
+function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: any) => any): any {
+    const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
+    return jsonc.applyEdits(
+        text,
+        jsoncEdit.setProperty(text, path, f(old), {
+            eol: '\n',
+            insertSpaces: true,
+            tabSize: 2,
+        })
+    )
 }
 
 export async function ensureHasExternalService({
