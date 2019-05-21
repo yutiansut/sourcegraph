@@ -1,10 +1,10 @@
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
 import pRetry from 'p-retry'
 import puppeteer from 'puppeteer'
 import { OperationOptions } from 'retry'
 import { Key } from 'ts-key-enum'
-import * as jsonc from '@sqs/jsonc-parser'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 
