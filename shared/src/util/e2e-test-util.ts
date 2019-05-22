@@ -328,7 +328,11 @@ export async function getTokenWithSelector(
     let element: puppeteer.ElementHandle<HTMLElement> | undefined
     for (const elem of elements) {
         const text = await page.evaluate(element => element.textContent, elem)
-        if (text.trim() === token) {
+        const tokenMatches = text.trim() === token
+        console.log(
+            `getTokenWithSelector token:"${token}", selector:"${selector}", element text:"${text}" matches:${tokenMatches}`
+        )
+        if (tokenMatches) {
             element = elem
             break
         }
