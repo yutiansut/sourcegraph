@@ -130,7 +130,7 @@ describe('Sourcegraph Phabricator extension', () => {
         const codeLine = await getTokenWithSelector(page, '\u200Btype CallOption interface {', 'td')
         await codeLine.click()
         // Once the line is tokenized, we can click on the individual token we want a hover for.
-        const codeElement = await getTokenWithSelector(page, 'CallOption', 'td.annotated span')
+        const codeElement = await page.waitForXPath(`//tbody/tr[5]//span[text()="CallOption"]`)
         await codeElement.click()
         await page.waitForSelector('.e2e-tooltip-go-to-definition')
     })
