@@ -134,6 +134,7 @@ describe('Sourcegraph Phabricator extension', () => {
         await page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
         // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
         const codeLine = await getTokenWithSelector(page, '\u200Btype CallOption interface {', 'td')
+        await codeLine.hover()
         await codeLine.click()
         console.log('Pausing 1000s to let you inspect the browser...')
         await new Promise(resolve => setTimeout(resolve, 1000 * 1000))
