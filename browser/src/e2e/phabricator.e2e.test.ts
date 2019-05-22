@@ -135,6 +135,8 @@ describe('Sourcegraph Phabricator extension', () => {
         // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
         const codeLine = await getTokenWithSelector(page, '\u200Btype CallOption interface {', 'td')
         await codeLine.click()
+        console.log('Pausing 1000s to let you inspect the browser...')
+        await new Promise(resolve => setTimeout(resolve, 1000 * 1000))
         // Once the line is tokenized, we can click on the individual token we want a hover for.
         const codeElement = await page.waitForXPath(`//tbody/tr[5]//span[text()="CallOption"]`)
         await codeElement.click()
