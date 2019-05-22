@@ -76,7 +76,7 @@ docker exec "$PHABRICATOR_CONTAINER" bash -c "apt-get update && apt-get install 
 # can hit it. This is similar to port-forwarding via SSH tunneling, but uses
 # docker exec as the transport.
 socat tcp-listen:80,reuseaddr,fork system:"docker exec -i $PHABRICATOR_CONTAINER socat stdio 'tcp:localhost:80'" &
-SOURCEGRAPH_URL="http://127.0.0.1:7080" source ./dev/phabricator/install-sourcegraph.sh
+SOURCEGRAPH_URL="$URL" source ./dev/phabricator/install-sourcegraph.sh
 pushd browser
 SOURCEGRAPH_BASE_URL="$URL" yarn run test-phabricator-e2e
 popd
