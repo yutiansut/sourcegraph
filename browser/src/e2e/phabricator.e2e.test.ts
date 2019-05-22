@@ -114,7 +114,7 @@ describe('Sourcegraph Phabricator extension', () => {
     beforeAll(async () => {
         browser = await launchBrowser(['--window-size=1600,1200'])
         page = await browser.newPage()
-        page.on('console', message => console.log('Browser console message:', JSON.stringify(message)))
+        page.on('console', message => console.log('Browser console message:', message.text()))
         await init({ page, baseURL, gitHubToken })
     }, 4 * 60 * 1000)
 
