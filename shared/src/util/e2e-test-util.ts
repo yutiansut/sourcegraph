@@ -211,7 +211,7 @@ export async function ensureHasCORSOrigin({
     const { site } = dataOrThrowErrors(currentConfigResponse)
     const currentConfig = site.configuration.effectiveContents
     const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
-        const urls = oldCorsOrigin.value.split(' ')
+        const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
         return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
     })
     const updateConfigResponse = await makeGraphQLRequest<GQL.IMutation>({
@@ -227,7 +227,7 @@ export async function ensureHasCORSOrigin({
     dataOrThrowErrors(updateConfigResponse)
 }
 
-function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: any) => any): any {
+function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
     const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
     return jsonc.applyEdits(
         text,
