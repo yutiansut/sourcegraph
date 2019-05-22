@@ -1,3 +1,4 @@
+import * as path from 'path'
 import puppeteer from 'puppeteer'
 import {
     BaseURLOptions,
@@ -9,6 +10,7 @@ import {
     PageOptions,
     readEnvString,
 } from '../../../shared/src/util/e2e-test-util'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 
 const PHABRICATOR_BASE_URL = 'http://127.0.0.1'
 
@@ -109,6 +111,13 @@ describe('Sourcegraph Phabricator extension', () => {
         page.on('console', message => console.log('Browser console message:', JSON.stringify(message)))
         await init({ page, baseURL, gitHubToken })
     }, 4 * 60 * 1000)
+
+    // Take a screenshot when a test fails.
+    saveScreenshotsUponFailuresAndClosePage(
+        path.resolve(__dirname, '..', '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
+        () => page
+    )
 
     beforeEach(async () => {
         page = await browser.newPage()
