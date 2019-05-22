@@ -24,7 +24,7 @@ async function phabricatorLogin({ page }: PageOptions): Promise<void> {
 }
 
 async function repositoryCloned({ page }: PageOptions): Promise<void> {
-    await page.goto(PHABRICATOR_BASE_URL + '/source/mux/manage/status/')
+    await page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
     try {
         await getTokenWithSelector(page, 'Fully Imported', 'td.phui-status-item-target')
     } catch (err) {
@@ -37,23 +37,23 @@ async function addPhabricatorRepo({ page }: PageOptions): Promise<void> {
     // Add new repo to Diffusion
     await page.goto(PHABRICATOR_BASE_URL + '/diffusion/edit/?vcs=git')
     await page.waitForSelector('input[name=shortName]')
-    await page.type('input[name=name]', 'gorilla/mux')
-    await page.type('input[name=callsign]', 'MUX')
-    await page.type('input[name=shortName]', 'mux')
+    await page.type('input[name=name]', 'sourcegraph/jsonrpc2')
+    await page.type('input[name=callsign]', 'JRPC')
+    await page.type('input[name=shortName]', 'jrpc')
     await page.click('button[type=submit]')
-    // Configure it to clone github.com/gorilla/mux
-    await page.goto(PHABRICATOR_BASE_URL + '/source/mux/uri/edit/')
+    // Configure it to clone github.com/sourcegraph/jsonrpc2
+    await page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/uri/edit/')
     await page.waitForSelector('input[name=uri]')
-    await page.type('input[name=uri]', 'https://github.com/gorilla/mux.git')
+    await page.type('input[name=uri]', 'https://github.com/sourcegraph/jsonrpc2.git')
     await page.select('select[name=io]', 'observe')
     await page.select('select[name=display]', 'always')
     const saveRepo = await getTokenWithSelector(page, 'Create Repository URI', 'button')
     await saveRepo.click()
     // Activate the repo and wait for it to clone
-    await page.goto(PHABRICATOR_BASE_URL + '/source/mux/manage/')
-    await page.waitForSelector('a[href="/source/mux/edit/activate/"]')
-    await page.click('a[href="/source/mux/edit/activate/"]')
-    await page.waitForSelector('form[action="/source/mux/edit/activate/"]')
+    await page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
+    await page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
+    await page.click('a[href="/source/jrpc/edit/activate/"]')
+    await page.waitForSelector('form[action="/source/jrpc/edit/activate/"]')
     const activateRepo = await getTokenWithSelector(page, 'Activate Repository', 'button')
     await activateRepo.click()
     await repositoryCloned({ page })
@@ -64,8 +64,8 @@ async function addPhabricatorRepo({ page }: PageOptions): Promise<void> {
         'textarea[name=value]',
         `[
         {
-          "path": "github.com/gorilla/mux",
-          "callsign": "MUX"
+          "path": "github.com/sourcegraph/jsonrpc2",
+          "callsign": "JRPC"
         }
       ]`
     )
@@ -88,10 +88,10 @@ async function init({
         config: JSON.stringify({
             url: 'https://github.com',
             token: gitHubToken,
-            repos: ['gorilla/mux'],
+            repos: ['sourcegraph/jsonrpc2'],
             repositoryQuery: ['none'],
         }),
-        ensureRepos: ['gorilla/mux'],
+        ensureRepos: ['sourcegraph/jsonrpc2'],
     })
     await phabricatorLogin({ page })
     await addPhabricatorRepo({ page })
@@ -114,17 +114,13 @@ describe('Sourcegraph Phabricator extension', () => {
     })
 
     it('Adds "View on Sourcegraph buttons to files" and code intelligence hovers', async () => {
-        await page.goto(PHABRICATOR_BASE_URL + '/source/mux/browse/master/context.go')
+        await page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go')
         await page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
         // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
-        const codeLine = await getTokenWithSelector(
-            page,
-            '\u200Bfunc contextGet(r *http.Request, key interface{}) interface{} {',
-            'td'
-        )
+        const codeLine = await getTokenWithSelector(page, '\u200Btype CallOption interface {', 'td')
         await codeLine.click()
         // Once the line is tokenized, we can click on the individual token we want a hover for.
-        const codeElement = await getTokenWithSelector(page, 'contextGet', 'td.annotated span')
+        const codeElement = await getTokenWithSelector(page, 'CallOption', 'td.annotated span')
         await codeElement.click()
         await page.waitForSelector('.e2e-tooltip-go-to-definition')
     })

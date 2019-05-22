@@ -279,15 +279,6 @@ export async function ensureHasExternalService({
     await page.waitForSelector(`[data-e2e-external-service-name="${displayName}"]`)
 
     if (ensureRepos) {
-        // Wait for repositories to sync.
-        await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-        await retry(async () => {
-            await page.reload()
-            await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/gorilla/mux']`, {
-                timeout: 5000,
-            })
-        })
-
         // Clone the repositories
         for (const slug of ensureRepos) {
             await page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
