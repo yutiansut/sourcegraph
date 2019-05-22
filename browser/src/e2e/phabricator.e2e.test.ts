@@ -14,6 +14,12 @@ import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/uti
 
 const PHABRICATOR_BASE_URL = 'http://127.0.0.1'
 
+// 1 minute test timeout. This must be greater than the default Puppeteer
+// command timeout of 30s in order to get the stack trace to point to the
+// Puppeteer command that failed instead of a cryptic Jest test timeout
+// location.
+jest.setTimeout(1 * 60 * 1000)
+
 async function phabricatorLogin({ page }: PageOptions): Promise<void> {
     await page.goto(PHABRICATOR_BASE_URL)
     await page.waitForSelector('.phabricator-wordmark')
