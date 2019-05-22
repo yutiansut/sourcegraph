@@ -18,7 +18,7 @@ const PHABRICATOR_BASE_URL = 'http://127.0.0.1'
 // command timeout of 30s in order to get the stack trace to point to the
 // Puppeteer command that failed instead of a cryptic Jest test timeout
 // location.
-jest.setTimeout(1 * 60 * 1000)
+jest.setTimeout(1000 * 60 * 1000)
 
 async function phabricatorLogin({ page }: PageOptions): Promise<void> {
     await page.goto(PHABRICATOR_BASE_URL)
