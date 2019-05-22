@@ -74,7 +74,7 @@ popd
 echo "--- Phabricator"
 source ./dev/phabricator/start.sh
 PHABRICATOR_CONTAINER="$(docker ps -aq -f name=phabricator$)"
-trap "docker logs --timestamps $PHABRICATOR_CONTAINER ; docker container rm -f $PHABRICATOR_CONTAINER " EXIT
+trap "docker container rm -f $PHABRICATOR_CONTAINER " EXIT
 
 
 # Connect the server container's port 80 to localhost:80 so that e2e tests
