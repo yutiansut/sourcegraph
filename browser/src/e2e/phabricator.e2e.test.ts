@@ -132,7 +132,7 @@ describe('Sourcegraph Phabricator extension', () => {
     it('Adds "View on Sourcegraph buttons to files" and code intelligence hovers', async () => {
         await page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go')
         await page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await page.waitFor(1000)
         // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
         const codeLine = await getTokenWithSelector(page, '\u200Btype CallOption interface {', 'td')
         await codeLine.hover()
