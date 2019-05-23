@@ -68,7 +68,7 @@ echo "--- yarn run test-e2e"
 pushd web
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
-# env PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
+env PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 popd
 
 echo "--- Phabricator"
