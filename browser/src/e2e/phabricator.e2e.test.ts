@@ -62,9 +62,10 @@ async function addPhabricatorRepo({ page }: PageOptions): Promise<void> {
     await page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
     await page.click('a[href="/source/jrpc/edit/activate/"]')
     await page.waitForSelector('form[action="/source/jrpc/edit/activate/"]')
-    const activateRepo = await getTokenWithSelector(page, 'Activate Repository', 'button')
-    await activateRepo.click()
-    await repositoryCloned({ page })
+    if ((await page.$x('//button[text()="Activate Repository"]')).length > 0) {
+        await (await page.$x('//button[text()="Activate Repository"]'))[0].click()
+        await repositoryCloned({ page })
+    }
     // Configure the repository mappings
     await page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.callsignMappings/')
     await page.waitForSelector('textarea[name=value]')
