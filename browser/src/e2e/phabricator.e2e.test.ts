@@ -144,13 +144,18 @@ describe('Sourcegraph Phabricator extension', () => {
     it('Adds "View on Sourcegraph buttons to files" and code intelligence hovers', async () => {
         await page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go')
         await page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
+
+        // Pause to give codeintellify time to register listeners for
+        // tokenization (only necessary in CI, not sure why).
         await page.waitFor(1000)
-        // Phabricatot tokenization is lazy, click on the whole line so that it's tokenized.
-        const codeLine = await getTokenWithSelector(page, '\u200Btype CallOption interface {', 'td')
-        await codeLine.hover()
+
+        // Trigger tokenization of the line.
+        const n = 5
+        const codeLine = await page.waitForSelector(`.diffusion-source > tbody > tr:nth-child(${n}) > td`)
         await codeLine.click()
+
         // Once the line is tokenized, we can click on the individual token we want a hover for.
-        const codeElement = await page.waitForXPath(`//tbody/tr[5]//span[text()="CallOption"]`)
+        const codeElement = await page.waitForXPath(`//tbody/tr[${n}]//span[text()="CallOption"]`)
         await codeElement.click()
         await page.waitForSelector('.e2e-tooltip-go-to-definition')
     })
