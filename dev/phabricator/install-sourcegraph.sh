@@ -18,13 +18,3 @@ docker exec -it $phab_container \
 # Add the static CSS/JS assets
 docker exec -it $phab_container \
     sh -c "cd ${phab_directory} && ./bin/celerity map"
-
-sourcegraph_url="${SOURCEGRAPH_BASE_URL}"
-if [ -z $SOURCEGRAPH_BASE_URL ]
-then
-    sourcegraph_url="http://127.0.0.1:3080"
-fi
-
-# Set sourcegraph.url config value
-docker exec -it $phab_container \
-    sh -c "cd ${phab_directory} && ./bin/config set sourcegraph.url ${sourcegraph_url} --database"

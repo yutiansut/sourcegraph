@@ -9,6 +9,7 @@ import {
     launchBrowser,
     PageOptions,
     readEnvString,
+    replaceText,
 } from '../../../shared/src/util/e2e-test-util'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 
@@ -41,7 +42,7 @@ async function repositoryCloned({ page }: PageOptions): Promise<void> {
     }
 }
 
-async function addPhabricatorRepo({ page }: PageOptions): Promise<void> {
+async function addPhabricatorRepo({ page, baseURL }: PageOptions & BaseURLOptions): Promise<void> {
     // Add new repo to Diffusion
     await page.goto(PHABRICATOR_BASE_URL + '/diffusion/edit/?vcs=git')
     await page.waitForSelector('input[name=shortName]')
@@ -66,18 +67,28 @@ async function addPhabricatorRepo({ page }: PageOptions): Promise<void> {
         await (await page.$x('//button[text()="Activate Repository"]'))[0].click()
         await repositoryCloned({ page })
     }
+
+    // Configure the Sourcegraph URL
+    await page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.url/')
+    await replaceText({
+        page,
+        selector: 'input[name=value]',
+        newText: baseURL,
+    })
+    await (await getTokenWithSelector(page, 'Save Config Entry', 'button')).click()
+
     // Configure the repository mappings
     await page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.callsignMappings/')
-    await page.waitForSelector('textarea[name=value]')
-    await page.type(
-        'textarea[name=value]',
-        `[
+    await replaceText({
+        page,
+        selector: 'textarea[name=value]',
+        newText: `[
         {
           "path": "github.com/sourcegraph/jsonrpc2",
           "callsign": "JRPC"
         }
-      ]`
-    )
+      ]`,
+    })
     const setCallsignMappings = await getTokenWithSelector(page, 'Save Config Entry', 'button')
     await setCallsignMappings.click()
 }
@@ -103,7 +114,7 @@ async function init({
         ensureRepos: ['sourcegraph/jsonrpc2'],
     })
     await phabricatorLogin({ page })
-    await addPhabricatorRepo({ page })
+    await addPhabricatorRepo({ page, baseURL })
 }
 
 describe('Sourcegraph Phabricator extension', () => {
