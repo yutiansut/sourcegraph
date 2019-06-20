@@ -27,6 +27,52 @@ func (q *Query) WithErrorsQuoted() *Query {
 	return q2
 }
 
+// EscapeImpossibleCaretsDollars puts a backslash in front of ^ if it occurs after the
+// beginning and $ if it appears before the end of the query.
+var unescapedCaretRx = regexp.MustCompile(`([^\\])\^`)
+var unescapedDollarRx = regexp.MustCompile(`(^|[^\\])\$(.)`)
+var initialCaretRx = regexp.MustCompile(`^\^`)
+var finalUnescapedDollarRx = regexp.MustCompile(`(^|[^\\])\$$`)
+
+func (q *Query) EscapeImpossibleCaretsDollars() *Query {
+	q2 := &Query{}
+	// nf is the number of non-fields seen so far.
+	nf := 0
+	for i, e := range q.Expr {
+		e2 := *e
+		e2.Value = fixedPointString(e2.Value, func(s string) string {
+			s = unescapedCaretRx.ReplaceAllString(s, `$1\^`)
+			s = unescapedDollarRx.ReplaceAllString(s, `$1\$$$2`)
+			if nf > 0 {
+				s = initialCaretRx.ReplaceAllString(s, `\^`)
+			}
+			if i+1 < len(q.Expr) {
+				s = finalUnescapedDollarRx.ReplaceAllString(s, `$1\$$`)
+			}
+			return s
+		})
+		if e2.Field == "" {
+			nf++
+		}
+		q2.Expr = append(q2.Expr, &e2)
+	}
+
+	q2.Input = q2.String()
+	return q2
+}
+
+// fixedPointString iterates the given function step on the given string s0
+// until it converges and s == step(s) for the returned string s.
+func fixedPointString(s0 string, step func(string) string) string {
+	for {
+		var s = step(s0)
+		if s == s0 {
+			return s
+		}
+		s0 = s
+	}
+}
+
 // An Expr describes an expression in a query.
 type Expr struct {
 	Pos       int       // the starting character position of the query expression

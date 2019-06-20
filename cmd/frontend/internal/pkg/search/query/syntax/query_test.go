@@ -54,3 +54,39 @@ func TestExpr_String(t *testing.T) {
 		})
 	}
 }
+
+func TestQuery_EscapeImpossibleCaretsDollars(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{in: "", want: ""},
+		{in: "a", want: "a"},
+		{in: "^", want: "^"},
+		{in: "$", want: "$"},
+		{in: "^$", want: "^$"},
+		{in: "^^$$", want: `^\^\$$`},
+		{in: "^^^$$$", want: `^\^\^\$\$$`},
+		{in: "$^", want: `\$\^`},
+		{in: "$ ^", want: `\$ \^`},
+		{in: "a$", want: "a$"},
+		{in: "a$b", want: `a\$b`},
+		{in: "^a$", want: "^a$"},
+		{in: "a^b", want: `a\^b`},
+		{in: "a^$b a^$b", want: `a\^\$b a\^\$b`},
+	}
+
+	for _, c := range cases {
+		t.Run(c.in, func(t *testing.T) {
+			q, err := Parse(c.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+			q2 := q.EscapeImpossibleCaretsDollars()
+			q2s := q2.String()
+			if q2s != c.want {
+				t.Errorf(`new query is "%s", want "%s"`, q2s, c.want)
+			}
+		})
+	}
+}
