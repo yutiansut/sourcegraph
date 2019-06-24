@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
+	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -15,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -135,6 +139,20 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	return db.Repos.Upsert(ctx, op)
 }
 
+type repoCacheItem struct {
+	ExpiresAt time.Time
+	Repos     []*types.Repo
+}
+
+var (
+	globalRepoCacheMu sync.RWMutex
+	globalRepoCache   = map[int32]repoCacheItem{}
+	globalRepoOpts    = db.ReposListOptions{
+		Enabled:     true,
+		LimitOffset: &db.LimitOffset{Limit: (math.MaxInt32 >> 1) + 1},
+	}
+)
+
 func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
@@ -149,7 +167,28 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 		done()
 	}()
 
-	return db.Repos.List(ctx, opt)
+	actor := actor.FromContext(ctx)
+	globalRepoCacheMu.RLock()
+	item := globalRepoCache[actor.UID]
+	globalRepoCacheMu.RUnlock()
+
+	if reflect.DeepEqual(opt, globalRepoOpts) && item.ExpiresAt.After(time.Now()) {
+		return item.Repos, nil
+	}
+
+	repos, err = db.Repos.List(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	globalRepoCacheMu.Lock()
+	globalRepoCache[actor.UID] = repoCacheItem{
+		ExpiresAt: time.Now().Add(10 * time.Second),
+		Repos:     repos,
+	}
+	globalRepoCacheMu.Unlock()
+
+	return repos, nil
 }
 
 var inventoryCache = rcache.New("inv")
