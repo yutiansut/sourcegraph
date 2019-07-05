@@ -1,11 +1,10 @@
 import { truncate } from 'lodash'
 import * as React from 'react'
-import { queryIndexOfScope } from './helpers'
 
 interface Props {
     name?: string
     value: string
-    query: string
+    isSelected?: boolean
     count?: number
     limitHit?: boolean
     showMore?: boolean
@@ -19,7 +18,7 @@ export class FilterChip extends React.PureComponent<Props> {
             <button
                 className={
                     `btn btn-sm text-nowrap filter-chip ${!!this.props.count ? 'filter-chip-repo' : ''}` +
-                    (this.isScopeSelected(this.props.query, this.props.value) ? ' filter-chip--selected' : '')
+                    (this.props.isSelected ? ' filter-chip--selected' : '')
                 }
                 data-testid="filter-chip"
                 value={this.props.value}
@@ -32,9 +31,7 @@ export class FilterChip extends React.PureComponent<Props> {
                     {!!this.props.count && (
                         <span
                             className={`filter-chip__count ${
-                                this.isScopeSelected(this.props.query, this.props.value)
-                                    ? ' filter-chip__count--selected'
-                                    : ''
+                                this.props.isSelected ? ' filter-chip__count--selected' : ''
                             }`}
                         >
                             {this.props.count}
@@ -47,7 +44,7 @@ export class FilterChip extends React.PureComponent<Props> {
     }
 
     private renderTooltip(valueIsTruncated: boolean): string | undefined {
-        if (this.isScopeSelected(this.props.query, this.props.value)) {
+        if (this.props.isSelected) {
             return 'Already added to query'
         }
         // Show filter value in tooltip if chip shows truncated value or scope name
@@ -55,10 +52,6 @@ export class FilterChip extends React.PureComponent<Props> {
             return this.props.value
         }
         return undefined
-    }
-
-    private isScopeSelected(query: string, scope: string): boolean {
-        return queryIndexOfScope(query, scope) !== -1
     }
 
     private onMouseDown: React.MouseEventHandler<HTMLButtonElement> = event => {
