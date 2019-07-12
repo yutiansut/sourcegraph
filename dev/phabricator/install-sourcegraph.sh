@@ -13,7 +13,7 @@ phab_directory="/opt/bitnami/phabricator"
 
 # Install the Phabricator native extension
 docker exec -it $phab_container \
-    sh -c "cd ${phab_directory}/src/extensions && git clone -b release-v1.1 ${sourcegraph_extension} sourcegraph"
+    sh -c "cd ${phab_directory}/src/extensions && git clone -b release-v1.2 ${sourcegraph_extension} sourcegraph"
 
 # Add the static CSS/JS assets
 docker exec -it $phab_container \
