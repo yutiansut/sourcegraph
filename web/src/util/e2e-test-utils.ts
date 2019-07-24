@@ -1,10 +1,8 @@
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
-import * as os from 'os'
 import pRetry from 'p-retry'
 import puppeteer from 'puppeteer'
 import { OperationOptions } from 'retry'
-import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 
@@ -60,97 +58,12 @@ export function readEnvString({ variable, defaultValue }: { variable: string; de
     return value
 }
 
-export interface PageOptions {
-    page: puppeteer.Page
-}
-
-interface ReplaceTextOptions extends PageOptions {
-    selector: string
-    newText: string
-    method?: ReplaceTextMethod
-}
-
-/**
- * Specifies how `replaceText` will select the content of the element. No
- * single method works in all cases:
- *
- * - Meta+A doesn't work in input boxes https://github.com/GoogleChrome/puppeteer/issues/1313
- * - selectall doesn't work in the Monaco editor
- */
-type ReplaceTextMethod = 'selectall' | 'keyboard'
-
-export async function replaceText({
-    page,
-    selector,
-    newText,
-    method = 'selectall',
-}: ReplaceTextOptions): Promise<void> {
-    const selectAllByMethod: Record<ReplaceTextMethod, () => Promise<void>> = {
-        selectall: async () => {
-            await page.evaluate(() => document.execCommand('selectall', false))
-        },
-        keyboard: async () => {
-            const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
-            await page.keyboard.down(modifier)
-            await page.keyboard.press('a')
-            await page.keyboard.up(modifier)
-        },
-    }
-
-    // The Monaco editor sometimes detaches nodes from the DOM, causing
-    // `click()` to fail unpredictably.
-    await retry(async () => {
-        await page.waitForSelector(selector)
-        await page.click(selector)
-    })
-    await selectAllByMethod[method]()
-    await page.keyboard.press(Key.Backspace)
-    await page.keyboard.type(newText)
-}
-
 export interface BaseURLOptions {
     baseURL: string
 }
 
-interface EnsureLoggedInOptions extends PageOptions, BaseURLOptions {
-    email?: string
-    username?: string
-    password?: string
-}
-
-export async function ensureLoggedIn({
-    page,
-    baseURL,
-    email = 'test@test.com',
-    username = 'test',
-    password = 'test',
-}: EnsureLoggedInOptions): Promise<void> {
-    await page.goto(baseURL)
-    await page.evaluate(() => {
-        localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
-        localStorage.setItem('has-dismissed-integrations-toast', 'true')
-        localStorage.setItem('has-dismissed-survey-toast', 'true')
-    })
-    const url = new URL(await page.url())
-    if (url.pathname === '/site-admin/init') {
-        await page.type('input[name=email]', email)
-        await page.type('input[name=username]', username)
-        await page.type('input[name=password]', password)
-        await page.click('button[type=submit]')
-        await page.waitForNavigation()
-    } else if (url.pathname === '/sign-in') {
-        await page.type('input', username)
-        await page.type('input[name=password]', password)
-        await page.click('button[type=submit]')
-        await page.waitForNavigation()
-    }
-}
-
-export interface EnsureHasExternalServiceOptions extends PageOptions, BaseURLOptions {
-    kind: string
-    displayName: string
-    config: string
-    ensureRepos?: string[]
+export interface PageOptions {
+    page: puppeteer.Page
 }
 
 async function makeRequest<T = void>({
@@ -237,85 +150,6 @@ function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Nod
             tabSize: 2,
         })
     )
-}
-
-export async function ensureHasExternalService({
-    page,
-    baseURL,
-    kind,
-    displayName,
-    config,
-    ensureRepos,
-}: EnsureHasExternalServiceOptions): Promise<void> {
-    await page.goto(baseURL + '/site-admin/external-services')
-    await page.waitFor('.e2e-filtered-connection')
-    await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
-
-    // Matches buttons for deleting external services named ${displayName}.
-    const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
-    if (await page.$(deleteButtonSelector)) {
-        const accept = async (dialog: puppeteer.Dialog) => {
-            await dialog.accept()
-            page.off('dialog', accept)
-        }
-        page.on('dialog', accept)
-        await page.click(deleteButtonSelector)
-    }
-
-    await (await page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
-
-    await (await page.waitForSelector(`[data-e2e-external-service-card-link="${kind}"]`, { visible: true })).click()
-
-    await replaceText({ page, selector: '#e2e-external-service-form-display-name', newText: displayName })
-
-    // Type in a new external service configuration.
-    await replaceText({
-        page,
-        selector: '.view-line',
-        newText: config,
-        method: 'keyboard',
-    })
-    await page.click('.e2e-add-external-service-button')
-    await page.waitForSelector(`[data-e2e-external-service-name="${displayName}"]`)
-
-    if (ensureRepos) {
-        // Clone the repositories
-        for (const slug of ensureRepos) {
-            await page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-            await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`, {
-                visible: true,
-            })
-            if (await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)) {
-                await page.click(`.repository-node[data-e2e-repository='github.com/${slug}'] .e2e-enable-repository`)
-                if (slug === 'sourcegraphtest/AlwaysCloningTest') {
-                    await page.waitForSelector(
-                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`,
-                        { visible: true }
-                    )
-                } else {
-                    await page.waitForSelector(
-                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`,
-                        { visible: true }
-                    )
-                }
-            }
-        }
-    }
-}
-
-export function launchBrowser(args: string[] = []): Promise<puppeteer.Browser> {
-    if (process.getuid() === 0) {
-        // TODO don't run as root in CI
-        console.warn('Running as root, disabling sandbox')
-        args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
-    }
-    const launchOpt = {
-        args,
-        headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-        defaultViewport: null,
-        appMode: true,
-    }
-    return puppeteer.launch(launchOpt)
 }
 
 export async function getTokenWithSelector(
