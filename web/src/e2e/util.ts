@@ -1,8 +1,12 @@
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as os from 'os'
 import puppeteer, { LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
+import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
@@ -231,6 +235,84 @@ export class Driver {
         // verify there are some references
         await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })
     }
+
+    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit }): Promise<T> {
+        const handle = await this.page.evaluateHandle(
+            (url, init) => fetch(url, init).then(r => r.json()),
+            url,
+            init as {}
+        )
+        return handle.jsonValue()
+    }
+
+    private async makeGraphQLRequest<T extends IQuery | IMutation>({
+        request,
+        variables,
+    }: {
+        request: string
+        variables: {}
+    }): Promise<GraphQLResult<T>> {
+        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+        const xhrHeaders = await this.page.evaluate(() => (window as any).context.xhrHeaders)
+        const response = await this.makeRequest<GraphQLResult<T>>({
+            url: `${baseURL}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+            init: {
+                method: 'POST',
+                body: JSON.stringify({ query: request, variables }),
+                headers: {
+                    ...xhrHeaders,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            },
+        })
+        return response
+    }
+
+    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+        const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query Site {
+                    site {
+                        id
+                        configuration {
+                            id
+                            effectiveContents
+                            validationMessages
+                        }
+                    }
+                }
+            `,
+            variables: {},
+        })
+        const { site } = dataOrThrowErrors(currentConfigResponse)
+        const currentConfig = site.configuration.effectiveContents
+        const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
+            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
+        })
+        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                    updateSiteConfiguration(lastID: $lastID, input: $input)
+                }
+            `,
+            variables: { lastID: site.configuration.id, input: newConfig },
+        })
+        dataOrThrowErrors(updateConfigResponse)
+    }
+}
+
+function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
+    const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
+    return jsonc.applyEdits(
+        text,
+        jsoncEdit.setProperty(text, path, f(old), {
+            eol: '\n',
+            insertSpaces: true,
+            tabSize: 2,
+        })
+    )
 }
 
 export async function createDriverForTest(): Promise<Driver> {

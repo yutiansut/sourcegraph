@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { ensureHasCORSOrigin, getTokenWithSelector } from '../util/e2e-test-utils'
+import { getTokenWithSelector } from '../util/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken } from './util'
 
 const PHABRICATOR_BASE_URL = 'http://127.0.0.1'
@@ -93,7 +93,7 @@ async function init(driver: Driver): Promise<void> {
             repositoryQuery: ['none'],
         }),
     })
-    await ensureHasCORSOrigin({ baseURL, page: driver.page, corsOriginURL: 'http://127.0.0.1' })
+    await driver.ensureHasCORSOrigin({ corsOriginURL: 'http://127.0.0.1' })
     await phabricatorLogin(driver)
     await addPhabricatorRepo(driver)
 }
