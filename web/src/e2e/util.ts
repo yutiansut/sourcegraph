@@ -323,14 +323,10 @@ export async function createDriverForTest(): Promise<Driver> {
         args = ['--no-sandbox', '--disable-setuid-sandbox']
     }
 
-    // the undocumented `appMode` launchOptions prevents Puppeteer from
-    // setting a default viewPort of 800x600, regardless of the specified
-    // window size.
-    const launchOpt: LaunchOptions & { appMode: boolean } = {
+    const launchOpt: LaunchOptions = {
         args: [...args, '--window-size=1280,1024'],
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
-        appMode: true,
     }
     const browser = await puppeteer.launch(launchOpt)
     const page = await browser.newPage()
