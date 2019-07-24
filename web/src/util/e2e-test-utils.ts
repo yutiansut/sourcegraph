@@ -54,14 +54,6 @@ export function readEnvString({ variable, defaultValue }: { variable: string; de
     return value
 }
 
-export interface BaseURLOptions {
-    baseURL: string
-}
-
-export interface PageOptions {
-    page: puppeteer.Page
-}
-
 export async function getTokenWithSelector(
     page: puppeteer.Page,
     token: string,
