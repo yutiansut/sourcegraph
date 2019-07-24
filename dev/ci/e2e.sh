@@ -35,7 +35,7 @@ echo "Copying $IMAGE to the dedicated e2e testing node... done"
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
-trap 'kill $(jobs -p)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker container rm -f $PHABRICATOR_CONTAINER; docker image rm -f $IMAGE" EXIT
+trap 'kill $(jobs -p)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
@@ -68,23 +68,5 @@ echo "--- yarn run test-e2e"
 pushd web
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
-env PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
-popd
-
-echo "--- Phabricator"
-source ./dev/phabricator/start.sh
-PHABRICATOR_CONTAINER="$(docker ps -aq -f name=phabricator$)"
-
-
-# Connect the server container's port 80 to localhost:80 so that e2e tests
-# can hit it. This is similar to port-forwarding via SSH tunneling, but uses
-# docker exec as the transport.
-docker exec "$PHABRICATOR_CONTAINER" bash -c "apt-get update && apt-get install -y socat"
-socat tcp-listen:80,reuseaddr,fork system:"docker exec -i $PHABRICATOR_CONTAINER socat stdio 'tcp:localhost:80'" &
-
-# Install the Sourcegraph native integration
-source ./dev/phabricator/install-sourcegraph.sh
-
-pushd browser
-yarn run test-phabricator-e2e
+env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 popd
