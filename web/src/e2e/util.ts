@@ -61,6 +61,10 @@ export class Driver {
         await this.browser.close()
     }
 
+    public async newPage(): Promise<void> {
+        this.page = await this.browser.newPage()
+    }
+
     public async selectAll(method: SelectTextMethod = 'selectall'): Promise<void> {
         switch (method) {
             case 'selectall':
@@ -143,7 +147,6 @@ export class Driver {
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
-            enterTextMethod: 'paste',
         })
 
         // Type in a new external service configuration.
@@ -151,7 +154,6 @@ export class Driver {
             selector: '.view-line',
             newText: config,
             selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
         })
         await this.page.click('.e2e-add-external-service-button')
         await this.page.waitForNavigation()
@@ -238,9 +240,15 @@ export async function createDriverForTest(): Promise<Driver> {
         console.warn('Running as root, disabling sandbox')
         args = ['--no-sandbox', '--disable-setuid-sandbox']
     }
-    const launchOpt: LaunchOptions = {
+
+    // the undocumented `appMode` launchOptions prevents Puppeteer from
+    // setting a default viewPort of 800x600, regardless of the specified
+    // window size.
+    const launchOpt: LaunchOptions & { appMode: boolean } = {
         args: [...args, '--window-size=1280,1024'],
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+        defaultViewport: null,
+        appMode: true,
     }
     const browser = await puppeteer.launch(launchOpt)
     const page = await browser.newPage()

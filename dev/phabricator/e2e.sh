@@ -7,6 +7,6 @@ PHABRICATOR_CONTAINER="$(docker ps -aq -f name=phabricator$)"
 # Install the Sourcegraph native integration
 source ./dev/phabricator/install-sourcegraph.sh
 
-pushd browser
+pushd web
 yarn run test-phabricator-e2e
 popd

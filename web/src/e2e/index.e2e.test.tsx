@@ -1,7 +1,7 @@
 import * as path from 'path'
 import puppeteer from 'puppeteer'
-import { retry } from '../../../shared/src/util/e2e-test-util'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
+import { retry } from '../util/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from './util'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer

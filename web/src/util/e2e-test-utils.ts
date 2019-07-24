@@ -5,8 +5,8 @@ import pRetry from 'p-retry'
 import puppeteer from 'puppeteer'
 import { OperationOptions } from 'retry'
 import { Key } from 'ts-key-enum'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import * as GQL from '../graphql/schema'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 /**
  * Retry function with more sensible defaults for e2e test assertions
