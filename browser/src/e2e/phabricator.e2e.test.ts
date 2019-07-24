@@ -103,7 +103,7 @@ async function init({
     await ensureHasExternalService({
         page,
         baseURL,
-        kind: 'github',
+        kind: 'GITHUB',
         displayName: 'github.com',
         config: JSON.stringify({
             url: 'https://github.com',

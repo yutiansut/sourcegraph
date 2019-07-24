@@ -264,7 +264,7 @@ export async function ensureHasExternalService({
 
     await (await page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
 
-    await (await page.waitForSelector(`.linked-external-service-card--${kind}`, { visible: true })).click()
+    await (await page.waitForSelector(`[data-e2e-external-service-card-link="${kind}"]`, { visible: true })).click()
 
     await replaceText({ page, selector: '#e2e-external-service-form-display-name', newText: displayName })
 
