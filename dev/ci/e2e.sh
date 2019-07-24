@@ -43,9 +43,6 @@ docker exec "$CONTAINER" apk add --no-cache socat
 # docker exec as the transport.
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
-URL="http://localhost:7080"
-export SOURCEGRAPH_BASE_URL="$URL"
-
 set +e
 timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
