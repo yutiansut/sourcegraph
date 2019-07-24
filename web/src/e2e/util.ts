@@ -1,6 +1,6 @@
+import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
-import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as os from 'os'
 import puppeteer, { LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
