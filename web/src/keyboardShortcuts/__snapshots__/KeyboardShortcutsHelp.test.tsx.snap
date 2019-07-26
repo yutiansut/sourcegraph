@@ -1,0 +1,48 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`KeyboardShortcutsHelp no user account 1`] = `
+<div
+  className="modal-body"
+>
+  <ul
+    className="list-group list-group-flush"
+  >
+    <li
+      className="list-group-item d-flex align-items-center justify-content-between"
+    >
+      t
+      <span>
+        <code
+          className="badge badge-secondary mr-2"
+        >
+          Alt+x
+        </code>
+      </span>
+    </li>
+    <li
+      className="list-group-item d-flex align-items-center justify-content-between"
+    >
+      Focus search bar
+      <span>
+        <code
+          className="badge badge-secondary mr-2"
+        >
+          /
+        </code>
+      </span>
+    </li>
+    <li
+      className="list-group-item d-flex align-items-center justify-content-between"
+    >
+      Expand URL to its canonical form (on file or tree page)
+      <span>
+        <code
+          className="badge badge-secondary mr-2"
+        >
+          y
+        </code>
+      </span>
+    </li>
+  </ul>
+</div>
+`;

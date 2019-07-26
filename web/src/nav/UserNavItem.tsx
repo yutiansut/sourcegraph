@@ -1,9 +1,10 @@
-import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { KeyboardShortcut } from '../keyboardShortcuts/keyboardShortcuts'
 import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
@@ -12,7 +13,7 @@ interface Props extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: GQL.IUser
     showDotComMarketing: boolean
     showDiscussions: boolean
-    switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
+    keyboardShortcutForSwitchTheme?: KeyboardShortcut
 }
 
 interface State {
@@ -97,8 +98,8 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </small>
                             </div>
                         )}
-                        {this.props.switchThemeKeybinding &&
-                            this.props.switchThemeKeybinding.map((keybinding, i) => (
+                        {this.props.keyboardShortcutForSwitchTheme &&
+                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, i) => (
                                 <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
                             ))}
                     </div>

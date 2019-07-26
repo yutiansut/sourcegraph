@@ -14,7 +14,7 @@ import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAre
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { extensionsAreaRoutes } from './extensions/routes'
-import { keybindings } from './keybindings'
+import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts/keyboardShortcuts'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
@@ -50,7 +50,7 @@ window.addEventListener('DOMContentLoaded', () => {
             repoRevContainerRoutes={repoRevContainerRoutes}
             repoHeaderActionButtons={repoHeaderActionButtons}
             routes={routes}
-            keybindings={keybindings}
+            keyboardShortcuts={KEYBOARD_SHORTCUTS}
         />,
         document.querySelector('#root')
     )
