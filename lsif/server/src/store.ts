@@ -328,6 +328,7 @@ export async function storeLSIF({
                 }
             }
         }
+        console.log('nquads:', mutation.getSetList().length)
         console.log('calling mutate')
         console.time('mutate')
         const assigned = await transaction.mutate(mutation)
